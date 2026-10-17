@@ -1,0 +1,12 @@
+{
+  "data_dir": "./data",
+  "listen": "0.0.0.0:8080",
+  "base_url": "http://192.168.1.10:8080",
+  "title": "自分のラジオ",
+  "poll_interval": "30m",
+  "lookback_days": 2,
+  "record_timeout": "30m",
+  "rules": [
+    { "station": "LFR", "match": "録音したい番組名の一部" }
+  ]
+}

@@ -1,0 +1,6 @@
+/bin/
+/data/
+/config.local.json
+.env
+.env.*
+!.env.example
