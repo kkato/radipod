@@ -82,24 +82,45 @@ func TestFeedAndAudioDownload(t *testing.T) {
 
 func TestAuthenticationCoversFeedAndMedia(t *testing.T) {
 	s, _ := store.New(t.TempDir())
+	e := store.Episode{ID: "TBS_20261011100000", Station: "TBS", Title: "test", Start: time.Now(), End: time.Now().Add(time.Minute)}
+	if _, err := s.Save(e, func(path string) (float64, error) { return 60, os.WriteFile(path, []byte("0123456789"), 0600) }); err != nil {
+		t.Fatal(err)
+	}
 	h, err := New(s, Config{BaseURL: "http://example.com", Title: "test", User: "user", Password: "secret"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, path := range []string{"/feed.xml", "/media/test.m4a", "/"} {
-		r := httptest.NewRequest("GET", path, nil)
-		w := httptest.NewRecorder()
-		h.ServeHTTP(w, r)
-		if w.Code != 401 {
-			t.Fatalf("%s accessible without credentials", path)
+	for _, path := range []string{"/feed.xml", "/media/" + e.ID + ".m4a", "/"} {
+		for _, method := range []string{"GET", "HEAD"} {
+			for _, password := range []string{"", "wrong", "secret"} {
+				r := httptest.NewRequest(method, path, nil)
+				if password != "" {
+					r.SetBasicAuth("user", password)
+				}
+				media := strings.HasPrefix(path, "/media/")
+				if media {
+					r.Header.Set("Range", "bytes=2-5")
+				}
+				w := httptest.NewRecorder()
+				h.ServeHTTP(w, r)
+				want := http.StatusUnauthorized
+				if password == "secret" {
+					want = http.StatusOK
+					if media {
+						want = http.StatusPartialContent
+					}
+				}
+				if w.Code != want {
+					t.Fatalf("%s %s: status=%d, want=%d", method, path, w.Code, want)
+				}
+				if w.Header().Get("Cache-Control") != "private, no-store" {
+					t.Fatalf("%s %s: authenticated content may be cached", method, path)
+				}
+				if password == "secret" && media && method == "GET" && w.Body.String() != "2345" {
+					t.Fatalf("unexpected range body: %q", w.Body.String())
+				}
+			}
 		}
-	}
-	r := httptest.NewRequest("GET", "/feed.xml", nil)
-	r.SetBasicAuth("user", "secret")
-	w := httptest.NewRecorder()
-	h.ServeHTTP(w, r)
-	if w.Code != 200 {
-		t.Fatal(w)
 	}
 	if _, err := New(s, Config{BaseURL: "http://example.com", Title: "test", User: "user"}); err == nil {
 		t.Fatal("accepted partial credentials")

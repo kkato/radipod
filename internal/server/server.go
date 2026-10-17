@@ -44,7 +44,9 @@ func New(s *store.Store, cfg Config) (http.Handler, error) {
 			return
 		}
 		w.Header().Set("Content-Type", "application/rss+xml; charset=utf-8")
-		w.Header().Set("Cache-Control", "no-cache")
+		if cfg.User == "" {
+			w.Header().Set("Cache-Control", "no-cache")
+		}
 		w.Header().Set("X-Content-Type-Options", "nosniff")
 		_, _ = w.Write(data)
 	})
@@ -76,6 +78,7 @@ func New(s *store.Store, cfg Config) (http.Handler, error) {
 	})
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if cfg.User != "" {
+			w.Header().Set("Cache-Control", "private, no-store")
 			user, pass, ok := r.BasicAuth()
 			u, p := sha256.Sum256([]byte(user)), sha256.Sum256([]byte(pass))
 			wantU, wantP := sha256.Sum256([]byte(cfg.User)), sha256.Sum256([]byte(cfg.Password))
