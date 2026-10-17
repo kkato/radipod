@@ -64,7 +64,7 @@ func run(ctx context.Context, args []string, out, errOut io.Writer) error {
 	}
 	f := flag.NewFlagSet(command, flag.ContinueOnError)
 	f.SetOutput(errOut)
-	var station, start, end, title, match, date, dataDir, baseURL, listen string
+	var station, start, end, title, match, date, dataDir, baseURL, listen, imageURL string
 	var timeout time.Duration
 	switch command {
 	case "programs", "record":
@@ -84,6 +84,7 @@ func run(ctx context.Context, args []string, out, errOut io.Writer) error {
 	if command == "serve" || command == "feed" {
 		f.StringVar(&baseURL, "base-url", "", "HTTP(S) origin reachable from your phone, e.g. http://192.168.1.10:8080")
 		f.StringVar(&title, "title", "radipod", "podcast title")
+		f.StringVar(&imageURL, "image-url", "", "optional HTTP(S) URL for podcast artwork")
 	}
 	if command == "serve" {
 		f.StringVar(&listen, "listen", "127.0.0.1:8080", "HTTP listen address")
@@ -110,14 +111,14 @@ func run(ctx context.Context, args []string, out, errOut io.Writer) error {
 			if err != nil {
 				return err
 			}
-			b, err := feed.Generate(episodes, baseURL, title)
+			b, err := feed.Generate(episodes, baseURL, title, imageURL)
 			if err != nil {
 				return err
 			}
 			_, err = out.Write(b)
 			return err
 		}
-		h, err := server.New(s, server.Config{BaseURL: baseURL, Title: title, User: os.Getenv("RADIPOD_HTTP_USER"), Password: os.Getenv("RADIPOD_HTTP_PASSWORD")})
+		h, err := server.New(s, server.Config{BaseURL: baseURL, Title: title, ImageURL: imageURL, User: os.Getenv("RADIPOD_HTTP_USER"), Password: os.Getenv("RADIPOD_HTTP_PASSWORD")})
 		if err != nil {
 			return err
 		}

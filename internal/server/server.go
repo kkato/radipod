@@ -12,7 +12,7 @@ import (
 	"github.com/kkato/radipod/internal/store"
 )
 
-type Config struct{ BaseURL, Title, User, Password string }
+type Config struct{ BaseURL, Title, ImageURL, User, Password string }
 
 func New(s *store.Store, cfg Config) (http.Handler, error) {
 	base, err := feed.ValidateBaseURL(cfg.BaseURL)
@@ -21,6 +21,9 @@ func New(s *store.Store, cfg Config) (http.Handler, error) {
 	}
 	if strings.TrimSpace(cfg.Title) == "" {
 		return nil, fmt.Errorf("feed title is required")
+	}
+	if err := feed.ValidateImageURL(cfg.ImageURL); err != nil {
+		return nil, err
 	}
 	if (cfg.User == "") != (cfg.Password == "") {
 		return nil, fmt.Errorf("set both RADIPOD_HTTP_USER and RADIPOD_HTTP_PASSWORD")
@@ -37,7 +40,7 @@ func New(s *store.Store, cfg Config) (http.Handler, error) {
 			http.Error(w, "cannot read episodes", 500)
 			return
 		}
-		data, err := feed.Generate(episodes, base, cfg.Title)
+		data, err := feed.Generate(episodes, base, cfg.Title, cfg.ImageURL)
 		if err != nil {
 			log.Printf("generate feed: %v", err)
 			http.Error(w, "cannot generate feed", 500)

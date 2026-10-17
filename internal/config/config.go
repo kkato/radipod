@@ -25,6 +25,7 @@ type Config struct {
 	Listen        string `json:"listen"`
 	BaseURL       string `json:"base_url"`
 	Title         string `json:"title"`
+	ImageURL      string `json:"image_url"`
 	PollInterval  string `json:"poll_interval"`
 	LookbackDays  int    `json:"lookback_days"`
 	RecordTimeout string `json:"record_timeout"`
@@ -65,6 +66,9 @@ func (c Config) Validate() error {
 		return fmt.Errorf("data_dir and title must not be empty")
 	}
 	if _, err := feed.ValidateBaseURL(c.BaseURL); err != nil {
+		return err
+	}
+	if err := feed.ValidateImageURL(c.ImageURL); err != nil {
 		return err
 	}
 	_, port, err := net.SplitHostPort(c.Listen)

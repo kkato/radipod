@@ -22,7 +22,7 @@ func TestFeedAndAudioDownload(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	h, err := New(s, Config{BaseURL: "http://radio.example:8080", Title: "radipod"})
+	h, err := New(s, Config{BaseURL: "http://radio.example:8080", Title: "radipod", ImageURL: "https://images.example/cover.png"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -37,6 +37,9 @@ func TestFeedAndAudioDownload(t *testing.T) {
 	}
 	if len(rss.Channel.Items) != 1 {
 		t.Fatal(rss)
+	}
+	if rss.Channel.Image == nil || rss.Channel.Image.URL != "https://images.example/cover.png" {
+		t.Fatal("server did not include configured artwork")
 	}
 	item := rss.Channel.Items[0]
 	if item.Title != e.Title || item.GUID.IsPermaLink != "false" || item.GUID.Value != "radipod:"+e.ID || item.Enclosure.Length != "10" || item.Enclosure.Type != "audio/mp4" || item.Enclosure.URL != "http://radio.example:8080/media/"+e.ID+".m4a" {
@@ -69,7 +72,7 @@ func TestFeedAndAudioDownload(t *testing.T) {
 	}
 	// Changing the serving address must not change episode identity.
 	es, _ := s.List()
-	changed, err := feed.Generate(es, "https://different.example", "test")
+	changed, err := feed.Generate(es, "https://different.example", "test", "")
 	if err != nil {
 		t.Fatal(err)
 	}

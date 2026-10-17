@@ -23,6 +23,7 @@ cp -n config.example.json config.local.json
 | --- | --- |
 | `base_url` | スマホから届くサーバーのURL。例: `http://192.168.1.10:8080` |
 | `title` | AntennaPodに表示する名前。例: `自分のラジオ` |
+| `image_url` | 番組画像のHTTP(S) URL。省略可。正方形の画像を推奨 |
 | `lookback_days` | 検索する放送日数。週1回の番組なら `7` |
 | `rules` | 放送局IDと番組名の部分一致。下の例を参照 |
 

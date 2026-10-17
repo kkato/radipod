@@ -60,7 +60,7 @@ func runConfigured(ctx context.Context, command string, args []string, out, errO
 		_, err := engine.Sync(ctx, cfg, time.Now(), dryRun)
 		return err
 	}
-	h, err := server.New(s, server.Config{BaseURL: cfg.BaseURL, Title: cfg.Title, User: os.Getenv("RADIPOD_HTTP_USER"), Password: os.Getenv("RADIPOD_HTTP_PASSWORD")})
+	h, err := server.New(s, server.Config{BaseURL: cfg.BaseURL, Title: cfg.Title, ImageURL: cfg.ImageURL, User: os.Getenv("RADIPOD_HTTP_USER"), Password: os.Getenv("RADIPOD_HTTP_PASSWORD")})
 	if err != nil {
 		return err
 	}

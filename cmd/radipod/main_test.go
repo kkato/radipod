@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"context"
+	"strings"
 	"testing"
 	"time"
 
@@ -35,6 +36,17 @@ func TestSelectionAndBroadcastDate(t *testing.T) {
 	ps, err = selectPrograms([]radiko.Program{program}, time.Time{}, "", "", "好き", start.Add(24*time.Hour))
 	if err != nil || len(ps) != 1 {
 		t.Fatalf("%v %v", ps, err)
+	}
+}
+
+func TestFeedArtworkFlag(t *testing.T) {
+	var out, errOut bytes.Buffer
+	err := run(context.Background(), []string{"feed", "-data", t.TempDir(), "-base-url", "https://radio.example", "-image-url", "https://images.example/cover.png"}, &out, &errOut)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(out.String(), `<itunes:image href="https://images.example/cover.png">`) {
+		t.Fatal(out.String())
 	}
 }
 

@@ -12,17 +12,31 @@ import (
 )
 
 type RSS struct {
-	XMLName xml.Name `xml:"rss"`
-	Version string   `xml:"version,attr"`
-	Channel Channel  `xml:"channel"`
+	XMLName         xml.Name `xml:"rss"`
+	Version         string   `xml:"version,attr"`
+	ITunesNamespace string   `xml:"xmlns:itunes,attr,omitempty"`
+	Channel         Channel  `xml:"channel"`
 }
 type Channel struct {
-	Title       string `xml:"title"`
-	Link        string `xml:"link"`
-	Description string `xml:"description"`
-	Language    string `xml:"language"`
-	Items       []Item `xml:"item"`
+	Title       string       `xml:"title"`
+	Link        string       `xml:"link"`
+	Description string       `xml:"description"`
+	Language    string       `xml:"language"`
+	Image       *Image       `xml:"image,omitempty"`
+	ITunesImage *ITunesImage `xml:"itunes:image,omitempty"`
+	Items       []Item       `xml:"item"`
 }
+type Image struct {
+	URL   string `xml:"url"`
+	Title string `xml:"title"`
+	Link  string `xml:"link"`
+}
+type ITunesImage struct {
+	Href string `xml:"href,attr"`
+}
+
+const ITunesNamespace = "http://www.itunes.com/dtds/podcast-1.0.dtd"
+
 type Item struct {
 	Title       string    `xml:"title"`
 	Description string    `xml:"description"`
@@ -48,7 +62,18 @@ func ValidateBaseURL(raw string) (string, error) {
 	return strings.TrimRight(u.String(), "/"), nil
 }
 
-func Generate(episodes []store.Episode, base, title string) ([]byte, error) {
+func ValidateImageURL(raw string) error {
+	if raw == "" {
+		return nil
+	}
+	u, err := url.Parse(raw)
+	if err != nil || u == nil || (u.Scheme != "http" && u.Scheme != "https") || u.Hostname() == "" || u.User != nil || u.Fragment != "" {
+		return fmt.Errorf("image_url must be an absolute http(s) URL without credentials or fragment")
+	}
+	return nil
+}
+
+func Generate(episodes []store.Episode, base, title, imageURL string) ([]byte, error) {
 	base, err := ValidateBaseURL(base)
 	if err != nil {
 		return nil, err
@@ -56,7 +81,15 @@ func Generate(episodes []store.Episode, base, title string) ([]byte, error) {
 	if strings.TrimSpace(title) == "" {
 		return nil, fmt.Errorf("feed title is required")
 	}
+	if err := ValidateImageURL(imageURL); err != nil {
+		return nil, err
+	}
 	rss := RSS{Version: "2.0", Channel: Channel{Title: title, Link: base + "/", Description: "Personal radio recordings", Language: "ja"}}
+	if imageURL != "" {
+		rss.ITunesNamespace = ITunesNamespace
+		rss.Channel.Image = &Image{URL: imageURL, Title: title, Link: base + "/"}
+		rss.Channel.ITunesImage = &ITunesImage{Href: imageURL}
+	}
 	for _, e := range episodes {
 		rss.Channel.Items = append(rss.Channel.Items, Item{
 			Title: e.Title, Description: e.Description, PubDate: e.Start.Format(time.RFC1123Z),
